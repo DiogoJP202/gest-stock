@@ -18,5 +18,6 @@ def init_routes(app):
     def register_user():
         return UserController.register_user()
     
-    
-
+    @app.route('/testarNumero', methods=['GET'])
+    def testar_numero():
+        return UserController.testarNumero()

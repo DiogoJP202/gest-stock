@@ -1,149 +1,230 @@
-# 📦 Gestão de Estoque para Mini Mercados
+# Gest-Stock API
 
-## 📌 Objetivo
-Desenvolver um sistema para gestão de estoque e vendas de mini mercados, garantindo segurança, controle de acesso e gestão eficiente de produtos e vendas.
+Flask backend project for mini-market seller registration, with local persistence (SQLite by default) and optional MySQL + Docker support.
 
----
+## Overview
 
-## 🚀 Funcionalidades Principais
+This API currently includes:
 
-### 1️⃣ Cadastro de Mini Mercado (Seller)
-Os mini mercados devem se cadastrar informando os seguintes campos:
-- **Nome**
-- **CNPJ**
-- **E-mail**
-- **Celular**
-- **Senha**
-- **Status** (Padrão: Inativo).
+- Health endpoints
+- Seller/user registration (`/user`)
+- WhatsApp activation message integration via Twilio
+- Simple layered structure (`Domain`, `Application`, `Infrastructure`, `config`)
 
-#### 🔹 Fluxo de Ativação do Seller:
-1. Após o cadastro, um código de 4 dígitos é enviado via **WhatsApp (Twilio)** para o seller.
-2. O seller deve inserir o código recebido para ativar sua conta.
-3. Somente sellers ativados podem fazer login e gerenciar produtos.
+## Tech Stack
 
----
+- Python 3.8
+- Flask 3
+- SQLAlchemy / Flask-SQLAlchemy
+- Twilio SDK
+- Docker / Docker Compose (optional for MySQL and containerized app)
 
-### 2️⃣ Autenticação do Seller
-- O sistema deve utilizar **JWT** ou **OAuth** para autenticação.
-- Sellers inativados não podem fazer login.
+## Project Structure
 
----
+```text
+.
+|-- run.py
+|-- docker-compose.yml
+|-- Dockerfile
+|-- requirements.txt
+`-- src/
+    |-- routes.py
+    |-- config/
+    |   `-- data_base.py
+    |-- Domain/
+    |   `-- user.py
+    |-- Infrastructure/
+    |   `-- Model/user.py
+    `-- Application/
+        |-- Controllers/user_controller.py
+        `-- Service/user_service.py
+```
 
-### 3️⃣ Gerenciamento de Produtos
-Um seller autenticado pode:
-- **Cadastrar produtos** com os seguintes campos:
-  - Nome
-  - Preço
-  - Quantidade
-  - Status (Ativo/Inativo)
-  - Imagem
-- **Listar produtos** cadastrados
-- **Editar produto**
-- **Ver detalhes de um produto**
-- **Inativar produtos**
+## Environment Variables (`.env`)
 
-**Regras:**
-- O seller só pode visualizar e gerenciar seus próprios produtos.
+Create a `.env` file in the project root:
 
----
+```env
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+```
 
-### 4️⃣ Venda de Produtos
-- O seller pode realizar uma venda informando:
-  - Produto
-  - Quantidade
-- As vendas devem ser armazenadas na tabela `Vendas`, contendo:
-  - ID do Produto
-  - Quantidade vendida
-  - Preço do produto no momento da venda
+Notes:
 
-**Regras:**
-- Não é possível vender mais do que a quantidade disponível em estoque.
-- Produtos inativados não podem ser vendidos.
-- Sellers inativos não podem realizar vendas.
+- These variables are required when sending WhatsApp messages.
+- If missing, the app starts, but Twilio send actions return error.
+- Do not commit real credentials to git.
 
----
+## Database
 
-## 📡 Endpoints da API
+The project is configured in `src/config/data_base.py` with two options:
 
-### 1️⃣ Cadastro e Ativação do Seller
-- **Criar Seller**
-  ```bash
-  curl -X POST "http://localhost:8080/api/sellers" \
-       -H "Content-Type: application/json" \
-       -d '{"nome": "Mini Mercado X", "cnpj": "00.000.000/0001-00", "email": "mercado@email.com", "celular": "+559999999999", "senha": "123456"}'
-  ```
-- **Ativar Seller via WhatsApp (Twilio)**
-  ```bash
-  curl -X POST "http://localhost:8080/api/sellers/activate" \
-       -H "Content-Type: application/json" \
-       -d '{"celular": "+559999999999", "codigo": "1234"}'
-  ```
+1. SQLite (default)
+- Active by default
+- Database file: `market_management.db`
+- Good for local development
 
-### 2️⃣ Autenticação
-- **Login**
-  ```bash
-  curl -X POST "http://localhost:8080/api/auth/login" \
-       -H "Content-Type: application/json" \
-       -d '{"email": "mercado@email.com", "senha": "123456"}'
-  ```
+2. MySQL (Docker)
+- Service name in compose: `mysql57`
+- Image: `mysql:8.0.29`
+- Database: `market_management`
+- Port mapping: `127.0.0.1:3306:3306`
 
-### 3️⃣ Gerenciamento de Produtos
-- **Cadastrar Produto**
-  ```bash
-  curl -X POST "http://localhost:8080/api/products" \
-       -H "Authorization: Bearer SEU_TOKEN" \
-       -H "Content-Type: application/json" \
-       -d '{"nome": "Arroz", "preco": 10.50, "quantidade": 100, "status": "Ativo", "img": "url_da_imagem"}'
-  ```
-- **Listar Produtos**
-  ```bash
-  curl -X GET "http://localhost:8080/api/products" \
-       -H "Authorization: Bearer SEU_TOKEN"
-  ```
-- **Editar Produto**
-  ```bash
-  curl -X PUT "http://localhost:8080/api/products/1" \
-       -H "Authorization: Bearer SEU_TOKEN" \
-       -H "Content-Type: application/json" \
-       -d '{"nome": "Arroz Integral", "preco": 12.00, "quantidade": 50, "status": "Ativo"}'
-  ```
-- **Ver Detalhes de um Produto**
-  ```bash
-  curl -X GET "http://localhost:8080/api/products/1" \
-       -H "Authorization: Bearer SEU_TOKEN"
-  ```
-- **Inativar Produto**
-  ```bash
-  curl -X PATCH "http://localhost:8080/api/products/1/inactivate" \
-       -H "Authorization: Bearer SEU_TOKEN"
-  ```
+To switch from SQLite to MySQL, update `SQLALCHEMY_DATABASE_URI` in `src/config/data_base.py` as indicated in comments.
 
-### 4️⃣ Realizar Venda
-- **Criar Venda**
-  ```bash
-  curl -X POST "http://localhost:8080/api/sales" \
-       -H "Authorization: Bearer SEU_TOKEN" \
-       -H "Content-Type: application/json" \
-       -d '{"produtoId": 1, "quantidade": 2}'
-  ```
+## Running the Project
 
----
+### Option 1: Local (without Docker)
 
-## 🛠️ Tecnologias Utilizadas
-- **Back-end:** Kotlin + Spring Boot
-- **Front-end:** React.js
-- **Banco de Dados:** MySQL ou PostgreSQL
-- **Autenticação:** JWT ou OAuth
-- **Mensageria:** Twilio (para envio do código de ativação no WhatsApp)
+1. Create and activate a virtual environment.
+2. Install dependencies:
 
----
+```bash
+pip install -r requirements.txt
+```
 
-## 📊 Dashboard e Relatórios
-- Implementação de um painel para exibição de relatórios e análise de vendas.
-- Monitoramento de estoque em tempo real.
+3. Set environment variables (`.env` or shell exports).
+4. Run:
 
----
+```bash
+flask --app run.py run
+```
 
-## 📌 Considerações Finais
-Este projeto fornece um sistema completo para mini mercados gerenciarem seus estoques e vendas com segurança e eficiência.  🚀
+API will be available at `http://localhost:5000`.
 
+### Option 2: Docker Compose
+
+1. Ensure `.env` exists with Twilio variables.
+2. Run:
+
+```bash
+docker compose up --build
+```
+
+Containers:
+
+- `web`: Flask API on `http://localhost:5000`
+- `mysql57`: MySQL on `127.0.0.1:3306`
+
+## API Endpoints
+
+Base URL: `http://localhost:5000`
+
+### `GET /`
+
+Health check.
+
+Example response:
+
+```json
+{
+  "message": "Server is running"
+}
+```
+
+### `GET /api`
+
+API status endpoint.
+
+Example response:
+
+```json
+{
+  "mensagem": "API - OK; Docker - Up"
+}
+```
+
+### `POST /user`
+
+Creates a user/seller and triggers Twilio WhatsApp activation send.
+
+Request body:
+
+```json
+{
+  "nome": "Mini Mercado X",
+  "cnpj": "12345678000199",
+  "email": "mercado@email.com",
+  "celular": "5511999999999",
+  "senha": "123456"
+}
+```
+
+Success response (`200`):
+
+```json
+{
+  "mensagem": "Usuario salvo com sucesso. Verifique o WhatsApp.",
+  "usuarios cadastrados": {},
+  "whatsapp": {
+    "sid": "SMxxxxxxxx",
+    "status": "queued",
+    "to": "whatsapp:+5511999999999"
+  }
+}
+```
+
+Possible errors:
+
+- `400`: required field missing
+- `401`: invalid CNPJ or phone length
+- `502`: user created but WhatsApp sending failed
+
+### `GET /testarNumero`
+
+Sends a Twilio WhatsApp message to a fixed number for integration testing.
+
+Success response (`200`):
+
+```json
+{
+  "sid": "SMxxxxxxxx",
+  "status": "queued",
+  "to": "whatsapp:+5511958942521"
+}
+```
+
+Error response (`500`):
+
+```json
+{
+  "erro": "..."
+}
+```
+
+## Useful cURL Commands
+
+Create user:
+
+```bash
+curl -X POST http://localhost:5000/user \
+  -H "Content-Type: application/json" \
+  -d "{\"nome\":\"Mini Mercado X\",\"cnpj\":\"12345678000199\",\"email\":\"mercado@email.com\",\"celular\":\"5511999999999\",\"senha\":\"123456\"}"
+```
+
+API health:
+
+```bash
+curl http://localhost:5000/api
+```
+
+Twilio test:
+
+```bash
+curl http://localhost:5000/testarNumero
+```
+
+## Troubleshooting
+
+- `KeyError: TWILIO_ACCOUNT_SID`:
+  - Ensure `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` are set.
+- Twilio send failures:
+  - Validate credentials, sandbox number format, and allowed destination in Twilio.
+- Database issues:
+  - Confirm selected database URI in `src/config/data_base.py`.
+  - For MySQL, verify `mysql57` container is running.
+
+## Security Notes
+
+- Rotate any Twilio credentials that were exposed in commits or screenshots.
+- Do not store production secrets in repository files.

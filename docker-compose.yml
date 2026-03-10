@@ -23,3 +23,5 @@ services:
     environment:
       FLASK_APP: run.py
       FLASK_ENV: development
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}

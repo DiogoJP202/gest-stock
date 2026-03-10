@@ -5,16 +5,17 @@ class User(db.Model):
     nome = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     cnpj = db.Column(db.String(14), unique=True, nullable=False)
-    celular = db.Column(db.String(11), nullable=False)
+    celular = db.Column(db.String(13), nullable=False)
     senha = db.Column(db.String(100), nullable=False)
     codigoTwilio = db.Column(db.String(4), nullable=False)
 
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name,
+            "nome": self.nome,
             "email": self.email,   
             "cnpj": self.cnpj,
             "celular": self.celular,
-            "status": self.status
+            "status": self.status,
+            "codigoTwilio": self.codigoTwilio
         }

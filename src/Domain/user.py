@@ -12,9 +12,10 @@ class UserDomain:
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name,
+            "nome": self.nome,
             "email": self.email,   
             "cnpj": self.cnpj,
             "celular": self.celular,
-            "status": self.status
+            "status": self.status, 
+            "codigoTwilio": self.codigoTwilio,
         }

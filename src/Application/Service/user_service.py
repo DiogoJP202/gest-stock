@@ -32,16 +32,18 @@ class UserService:
         return UserDomain(user.id, user.nome, user.cnpj, user.email, user.celular, user.senha, user.codigoTwilio)
     
     @staticmethod
-    def ativacao_twilio(celular):
+    def ativacao_twilio(celular, codigo):
+        auth_phone_number = os.getenv("TWILIO_PHONE_NUMBER")
+        
         client = _build_twilio_client()
         if client is None:
             raise RuntimeError("Twilio credentials are missing. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.")
 
         message = client.messages.create(
-            from_ = "whatsapp:+14155238886",
+            from_ = f"whatsapp:+14155238886",
             to = f"whatsapp:+{celular}",
-            content_sid = "HXb5b62575e6e4ff6129ad7c8efe1f983e",
-            content_variables = json.dumps({"1": "22 July 2026", "2": "3:15pm"}),
+            content_sid='HX229f5a04fd0510ce1b071852155d3e75',
+            content_variables=f'{{"1":"{codigo}"}}',        
         )
 
         return {
@@ -49,3 +51,8 @@ class UserService:
             "status": message.status,
             "to": message.to,
         }
+        
+    @staticmethod
+    def get_all_users():
+        users = User.query.all()
+        return [UserDomain(user.id, user.nome, user.cnpj, user.email, user.celular, user.senha, user.codigoTwilio).to_dict() for user in users]

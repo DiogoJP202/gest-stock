@@ -25,7 +25,7 @@ class UserController:
         user = UserService.create_user(nome, cnpj, email, celular, senha)
 
         try:
-            twilio_result = UserService.ativacao_twilio(celular)
+            twilio_result = UserService.ativacao_twilio(celular, user.codigoTwilio)
         except Exception as exc:
             return make_response(
                 jsonify(
@@ -56,5 +56,9 @@ class UserController:
             return make_response(jsonify(result), 200)
         except Exception as exc:
             return make_response(jsonify({"erro": str(exc)}), 500)
+        
+    @staticmethod
+    def verUsuarios():
+        return make_response(jsonify({"usuarios": UserService.get_all_users()}), 200)
 
 

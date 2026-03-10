@@ -14,7 +14,7 @@ Os mini mercados devem se cadastrar informando os seguintes campos:
 - **E-mail**
 - **Celular**
 - **Senha**
-- **Status** (Padrão: Inativo)
+- **Status** (Padrão: Inativo).
 
 #### 🔹 Fluxo de Ativação do Seller:
 1. Após o cadastro, um código de 4 dígitos é enviado via **WhatsApp (Twilio)** para o seller.
@@ -145,5 +145,5 @@ Um seller autenticado pode:
 ---
 
 ## 📌 Considerações Finais
-Este projeto fornece um sistema completo para mini mercados gerenciarem seus estoques e vendas com segurança e eficiência. 🚀
+Este projeto fornece um sistema completo para mini mercados gerenciarem seus estoques e vendas com segurança e eficiência.  🚀
 

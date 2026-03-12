@@ -1,25 +1,25 @@
 # Gest-Stock API
 
-Flask backend project for mini-market seller registration, with local persistence (SQLite by default) and optional MySQL + Docker support.
+Projeto backend em Flask para cadastro de vendedores/usuários de mini mercado, com persistência local (SQLite por padrão) e suporte opcional a MySQL + Docker.
 
-## Overview
+## Visão Geral
 
-This API currently includes:
+Atualmente, esta API inclui:
 
-- Health endpoints
-- Seller/user registration (`/user`)
-- WhatsApp activation message integration via Twilio
-- Simple layered structure (`Domain`, `Application`, `Infrastructure`, `config`)
+- Endpoints de saúde
+- Cadastro de vendedor/usuário (`/user`)
+- Integração com envio de mensagem de ativação via WhatsApp (Twilio)
+- Estrutura no estilo Hexagonal (Ports and Adapters)
 
-## Tech Stack
+## Stack Tecnológica
 
 - Python 3.8
 - Flask 3
 - SQLAlchemy / Flask-SQLAlchemy
 - Twilio SDK
-- Docker / Docker Compose (optional for MySQL and containerized app)
+- Docker / Docker Compose (opcional para MySQL e app em container)
 
-## Project Structure
+## Estrutura do Projeto
 
 ```text
 .
@@ -33,69 +33,75 @@ This API currently includes:
     |   `-- data_base.py
     |-- Domain/
     |   `-- user.py
+    |-- Application/
+    |   |-- Controllers/user_controller.py
+    |   |-- Ports/
+    |   |   |-- message_service_port.py
+    |   |   `-- user_repository_port.py
+    |   `-- UseCases/user_use_case.py
     |-- Infrastructure/
-    |   `-- Model/user.py
-    `-- Application/
-        |-- Controllers/user_controller.py
-        `-- Service/user_service.py
+    |   |-- Model/user.py
+    |   `-- Adapters/
+    |       |-- messaging/twilio_message_service.py
+    |       `-- repositories/sqlalchemy_user_repository.py
 ```
 
-## Environment Variables (`.env`)
+## Variáveis de Ambiente (`.env`)
 
-Create a `.env` file in the project root:
+Crie um arquivo `.env` na raiz do projeto:
 
 ```env
 TWILIO_ACCOUNT_SID=your_twilio_account_sid
 TWILIO_AUTH_TOKEN=your_twilio_auth_token
 ```
 
-Notes:
+Observações:
 
-- These variables are required when sending WhatsApp messages.
-- If missing, the app starts, but Twilio send actions return error.
-- Do not commit real credentials to git.
+- Essas variáveis são obrigatórias para envio de mensagens no WhatsApp.
+- Se estiverem ausentes, a aplicação sobe, mas os envios via Twilio retornam erro.
+- Não faça commit de credenciais reais no git.
 
-## Database
+## Banco de Dados
 
-The project is configured in `src/config/data_base.py` with two options:
+O projeto está configurado em `src/config/data_base.py` com duas opções:
 
-1. SQLite (default)
-- Active by default
-- Database file: `market_management.db`
-- Good for local development
+1. SQLite (padrão)
+- Ativo por padrão
+- Arquivo do banco: `market_management.db`
+- Ideal para desenvolvimento local
 
 2. MySQL (Docker)
-- Service name in compose: `mysql57`
-- Image: `mysql:8.0.29`
-- Database: `market_management`
-- Port mapping: `127.0.0.1:3306:3306`
+- Nome do serviço no compose: `mysql57`
+- Imagem: `mysql:8.0.29`
+- Banco: `market_management`
+- Mapeamento de porta: `127.0.0.1:3306:3306`
 
-To switch from SQLite to MySQL, update `SQLALCHEMY_DATABASE_URI` in `src/config/data_base.py` as indicated in comments.
+Para trocar de SQLite para MySQL, atualize `SQLALCHEMY_DATABASE_URI` em `src/config/data_base.py` conforme indicado nos comentários.
 
-## Running the Project
+## Executando o Projeto
 
-### Option 1: Local (without Docker)
+### Opção 1: Local (sem Docker)
 
-1. Create and activate a virtual environment.
-2. Install dependencies:
+1. Crie e ative um ambiente virtual.
+2. Instale as dependências:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Set environment variables (`.env` or shell exports).
-4. Run:
+3. Defina as variáveis de ambiente (`.env` ou exports no shell).
+4. Execute:
 
 ```bash
 flask --app run.py run
 ```
 
-API will be available at `http://localhost:5000`.
+A API ficará disponível em `http://localhost:5000`.
 
-### Option 2: Docker Compose
+### Opção 2: Docker Compose
 
-1. Ensure `.env` exists with Twilio variables.
-2. Run:
+1. Garanta que o `.env` existe com as variáveis do Twilio.
+2. Execute:
 
 ```bash
 docker compose up --build
@@ -103,10 +109,10 @@ docker compose up --build
 
 Containers:
 
-- `web`: Flask API on `http://localhost:5000`
-- `mysql57`: MySQL on `127.0.0.1:3306`
+- `web`: API Flask em `http://localhost:5000`
+- `mysql57`: MySQL em `127.0.0.1:3306`
 
-## API Endpoints
+## Endpoints da API
 
 Base URL: `http://localhost:5000`
 
@@ -114,7 +120,7 @@ Base URL: `http://localhost:5000`
 
 Health check.
 
-Example response:
+Exemplo de resposta:
 
 ```json
 {
@@ -124,9 +130,9 @@ Example response:
 
 ### `GET /api`
 
-API status endpoint.
+Endpoint de status da API.
 
-Example response:
+Exemplo de resposta:
 
 ```json
 {
@@ -136,9 +142,9 @@ Example response:
 
 ### `POST /user`
 
-Creates a user/seller and triggers Twilio WhatsApp activation send.
+Cria um usuário/vendedor e dispara o envio de ativação no WhatsApp via Twilio.
 
-Request body:
+Corpo da requisição:
 
 ```json
 {
@@ -150,7 +156,7 @@ Request body:
 }
 ```
 
-Success response (`200`):
+Resposta de sucesso (`200`):
 
 ```json
 {
@@ -164,17 +170,17 @@ Success response (`200`):
 }
 ```
 
-Possible errors:
+Possíveis erros:
 
-- `400`: required field missing
-- `401`: invalid CNPJ or phone length
-- `502`: user created but WhatsApp sending failed
+- `400`: campo obrigatório ausente
+- `401`: CNPJ inválido ou tamanho de telefone inválido
+- `502`: usuário criado, mas falha no envio via WhatsApp
 
 ### `GET /testarNumero`
 
-Sends a Twilio WhatsApp message to a fixed number for integration testing.
+Envia uma mensagem de WhatsApp via Twilio para um número fixo (teste de integração).
 
-Success response (`200`):
+Resposta de sucesso (`200`):
 
 ```json
 {
@@ -184,7 +190,7 @@ Success response (`200`):
 }
 ```
 
-Error response (`500`):
+Resposta de erro (`500`):
 
 ```json
 {
@@ -192,9 +198,13 @@ Error response (`500`):
 }
 ```
 
-## Useful cURL Commands
+### `GET /users`
 
-Create user:
+Lista todos os usuários.
+
+## Comandos cURL Úteis
+
+Criar usuário:
 
 ```bash
 curl -X POST http://localhost:5000/user \
@@ -202,29 +212,14 @@ curl -X POST http://localhost:5000/user \
   -d "{\"nome\":\"Mini Mercado X\",\"cnpj\":\"12345678000199\",\"email\":\"mercado@email.com\",\"celular\":\"5511999999999\",\"senha\":\"123456\"}"
 ```
 
-API health:
+Status da API:
 
 ```bash
 curl http://localhost:5000/api
 ```
 
-Twilio test:
+Teste Twilio:
 
 ```bash
 curl http://localhost:5000/testarNumero
 ```
-
-## Troubleshooting
-
-- `KeyError: TWILIO_ACCOUNT_SID`:
-  - Ensure `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` are set.
-- Twilio send failures:
-  - Validate credentials, sandbox number format, and allowed destination in Twilio.
-- Database issues:
-  - Confirm selected database URI in `src/config/data_base.py`.
-  - For MySQL, verify `mysql57` container is running.
-
-## Security Notes
-
-- Rotate any Twilio credentials that were exposed in commits or screenshots.
-- Do not store production secrets in repository files.

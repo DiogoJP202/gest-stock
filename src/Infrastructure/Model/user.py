@@ -16,6 +16,6 @@ class User(db.Model):
             "email": self.email,   
             "cnpj": self.cnpj,
             "celular": self.celular,
-            "status": self.status,
+            "status": False,
             "codigoTwilio": self.codigoTwilio
         }

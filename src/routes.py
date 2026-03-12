@@ -21,3 +21,7 @@ def init_routes(app):
     @app.route('/testarNumero', methods=['GET'])
     def testar_numero():
         return UserController.testarNumero()
+
+    @app.route('/users', methods=['GET'])
+    def ver_usuarios():
+        return UserController.verUsuarios()

@@ -1,11 +1,20 @@
-
 from flask import request, jsonify, make_response
-from src.Application.Service.user_service import UserService
+from src.Application.UseCases.user_use_case import UserUseCase
+from src.Infrastructure.Adapters.messaging.twilio_message_service import TwilioMessageService
+from src.Infrastructure.Adapters.repositories.sqlalchemy_user_repository import (
+    SqlAlchemyUserRepository,
+)
+
+
+_user_use_case = UserUseCase(
+    user_repository=SqlAlchemyUserRepository(),
+    message_service=TwilioMessageService(),
+)
 
 class UserController:
     @staticmethod
     def register_user():
-        data = request.get_json()
+        data = request.get_json() or {}
 
         nome = data.get("nome")
         cnpj = data.get("cnpj")
@@ -22,17 +31,20 @@ class UserController:
         if len(celular) < 11:
             return make_response(jsonify("Numero de celular invalido. Use um numero valido e funcional."), 401)
 
-        user = UserService.create_user(nome, cnpj, email, celular, senha)
-
         try:
-            twilio_result = UserService.ativacao_twilio(celular, user.codigoTwilio)
+            user, twilio_result = _user_use_case.register_user(
+                nome=nome,
+                cnpj=cnpj,
+                email=email,
+                celular=celular,
+                senha=senha,
+            )
         except Exception as exc:
             return make_response(
                 jsonify(
                     {
-                        "erro": "Usuario criado, mas falha ao enviar WhatsApp.",
+                        "erro": "Falha no cadastro ou no envio do WhatsApp.",
                         "detalhe": str(exc),
-                        "usuario": user.to_dict(),
                     }
                 ),
                 502,
@@ -52,13 +64,13 @@ class UserController:
     @staticmethod
     def testarNumero():
         try:
-            result = UserService.ativacao_twilio("5511958942521")
+            result = _user_use_case.send_test_activation("5511958942521")
             return make_response(jsonify(result), 200)
         except Exception as exc:
             return make_response(jsonify({"erro": str(exc)}), 500)
         
     @staticmethod
     def verUsuarios():
-        return make_response(jsonify({"usuarios": UserService.get_all_users()}), 200)
+        return make_response(jsonify({"usuarios": _user_use_case.list_users()}), 200)
 
 

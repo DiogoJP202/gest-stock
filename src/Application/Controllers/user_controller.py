@@ -1,18 +1,23 @@
 from functools import wraps
 
-from flask import jsonify, make_response, request
+from flask import current_app, jsonify, make_response, request
 
 from src.Application.UseCases.user_use_case import UserUseCase
 from src.Infrastructure.Adapters.messaging.twilio_message_service import TwilioMessageService
 from src.Infrastructure.Adapters.repositories.sqlalchemy_user_repository import (
     SqlAlchemyUserRepository,
 )
+from src.Infrastructure.Adapters.security.jwt_token_service import JwtTokenService
+from src.Infrastructure.Adapters.security.password_service import PasswordService
 
 
-_user_use_case = UserUseCase(
-    user_repository=SqlAlchemyUserRepository(),
-    message_service=TwilioMessageService(),
-)
+def _build_user_use_case():
+    return UserUseCase(
+        user_repository=SqlAlchemyUserRepository(),
+        message_service=TwilioMessageService(),
+        password_service=PasswordService(),
+        token_service=JwtTokenService(current_app.config["JWT_SECRET_KEY"]),
+    )
 
 
 def token_required(func):
@@ -24,7 +29,7 @@ def token_required(func):
             return make_response(jsonify({"erro": "Token ausente ou mal formatado."}), 401)
 
         token = authorization.split(" ", 1)[1].strip()
-        payload = _user_use_case.validar_token(token)
+        payload = _build_user_use_case().validar_token(token)
 
         if isinstance(payload, dict) and payload.get("erro"):
             return make_response(jsonify(payload), 401)
@@ -55,7 +60,7 @@ class UserController:
             return make_response(jsonify("Numero de celular invalido. Use um numero valido e funcional."), 401)
 
         try:
-            user, twilio_result = _user_use_case.register_user(
+            user, twilio_result = _build_user_use_case().register_user(
                 nome=nome,
                 cnpj=cnpj,
                 email=email,
@@ -87,7 +92,7 @@ class UserController:
     @staticmethod
     def testarNumero():
         try:
-            result = _user_use_case.send_test_activation("5511958942521")
+            result = _build_user_use_case().send_test_activation("5511958942521")
             return make_response(jsonify(result), 200)
         except Exception as exc:
             return make_response(jsonify({"erro": str(exc)}), 500)
@@ -95,7 +100,7 @@ class UserController:
     @staticmethod
     @token_required
     def verUsuarios():
-        return make_response(jsonify({"usuarios": _user_use_case.list_users()}), 200)
+        return make_response(jsonify({"usuarios": _build_user_use_case().list_users()}), 200)
 
     @staticmethod
     def ativar_usuario():
@@ -107,7 +112,7 @@ class UserController:
         if not email or not codigoAtivacao:
             return make_response(jsonify({"erro": "Um campo nao foi preenchido."}), 400)
 
-        usuario = _user_use_case.ativa_usuario_via_email(email, codigoAtivacao)
+        usuario = _build_user_use_case().ativa_usuario_via_email(email, codigoAtivacao)
 
         if usuario:
             return "Usuario ativo com sucesso!", 200
@@ -123,12 +128,12 @@ class UserController:
         if not email or not senha:
             return make_response(jsonify({"erro": "Um campo nao foi preenchido."}), 400)
 
-        usuario = _user_use_case.validar_usuario(email, senha)
+        usuario = _build_user_use_case().validar_usuario(email, senha)
 
         if not usuario:
             return {"erro": "Login invalido"}, 400
 
-        token = _user_use_case.criar_token(user_id=usuario.id)
+        token = _build_user_use_case().criar_token(user_id=usuario.id)
 
         return {
             "access_token": token,

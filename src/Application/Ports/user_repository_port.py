@@ -13,3 +13,7 @@ class UserRepositoryPort(ABC):
     @abstractmethod
     def busca_por_email(self, email):
         raise NotImplementedError
+
+    @abstractmethod
+    def ativa_usuario(self, email, codigo_ativacao):
+        raise NotImplementedError

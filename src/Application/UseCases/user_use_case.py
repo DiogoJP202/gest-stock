@@ -1,46 +1,25 @@
 import secrets
-from datetime import datetime, timedelta, timezone
-
-import jwt
-from flask import current_app
-from werkzeug.security import check_password_hash, generate_password_hash
 
 from src.Domain.user import UserDomain
 
-ALGORITHM = "HS256"
-
 
 class UserUseCase:
-    def __init__(self, user_repository, message_service):
+    def __init__(self, user_repository, message_service, password_service, token_service):
         self.user_repository = user_repository
         self.message_service = message_service
+        self.password_service = password_service
+        self.token_service = token_service
 
     @staticmethod
     def _gerar_codigo(tamanho=4):
         maximo = 10**tamanho
         return f"{secrets.randbelow(maximo):0{tamanho}}"
 
-    @staticmethod
-    def _get_secret_key():
-        return current_app.config["JWT_SECRET_KEY"]
+    def criar_token(self, user_id: int):
+        return self.token_service.create_token(user_id)
 
-    @staticmethod
-    def criar_token(user_id: int):
-        payload = {
-            "sub": str(user_id),
-            "iat": datetime.now(timezone.utc),
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
-        }
-        return jwt.encode(payload, UserUseCase._get_secret_key(), algorithm=ALGORITHM)
-
-    @staticmethod
-    def validar_token(token: str):
-        try:
-            return jwt.decode(token, UserUseCase._get_secret_key(), algorithms=[ALGORITHM])
-        except jwt.ExpiredSignatureError:
-            return {"erro": "Token expirado"}
-        except jwt.InvalidTokenError:
-            return {"erro": "Token invalido"}
+    def validar_token(self, token: str):
+        return self.token_service.validate_token(token)
 
     def register_user(self, nome, cnpj, email, celular, senha):
         codigo = self._gerar_codigo()
@@ -49,7 +28,7 @@ class UserUseCase:
             id=None,
             nome=nome,
             email=email,
-            senha=generate_password_hash(senha),
+            senha=self.password_service.hash_password(senha),
             cnpj=cnpj,
             celular=celular,
             codigoTwilio=codigo,
@@ -72,11 +51,11 @@ class UserUseCase:
         if not usuario:
             return False
 
-        senha_armazenada = usuario.senha or ""
-        if senha_armazenada.startswith(("pbkdf2:", "scrypt:")):
-            return usuario if check_password_hash(senha_armazenada, senha) else False
-
-        return usuario if senha_armazenada == senha else False
+        return (
+            usuario
+            if self.password_service.verify_password(usuario.senha, senha)
+            else False
+        )
 
     def ativa_usuario_via_email(self, email, codigoAtivacao):
-        return self.user_repository.ativaUsuario(email, codigoAtivacao)
+        return self.user_repository.ativa_usuario(email, codigoAtivacao)

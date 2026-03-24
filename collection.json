@@ -2,7 +2,7 @@
   "info": {
     "name": "Gest-Stock API",
     "_postman_id": "c3d2f3f0-gest-stock-api",
-    "description": "Fluxo completo para testar todos os endpoints com banco vazio.",
+    "description": "Collection com todos os endpoints atuais da API Gest-Stock.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -45,6 +45,7 @@
       "request": {
         "method": "GET",
         "header": [],
+        "description": "Verifica se o servidor Flask esta no ar.",
         "url": {
           "raw": "{{base_url}}/",
           "host": [
@@ -61,6 +62,7 @@
       "request": {
         "method": "GET",
         "header": [],
+        "description": "Retorna o status geral da API.",
         "url": {
           "raw": "{{base_url}}/api",
           "host": [
@@ -99,6 +101,7 @@
             "value": "application/json"
           }
         ],
+        "description": "Cria um usuario e captura o codigo de ativacao retornado no payload.",
         "body": {
           "mode": "raw",
           "raw": "{\n  \"nome\": \"{{nome}}\",\n  \"cnpj\": \"{{cnpj}}\",\n  \"email\": \"{{email}}\",\n  \"celular\": \"{{celular}}\",\n  \"senha\": \"{{senha}}\"\n}"
@@ -115,7 +118,33 @@
       }
     },
     {
-      "name": "04 - Login",
+      "name": "04 - Activate User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "description": "Ativa o usuario usando email e codigo de ativacao salvo na collection.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"codigoAtivacao\": \"{{activation_code}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/ativarUsuario",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "ativarUsuario"
+          ]
+        }
+      }
+    },
+    {
+      "name": "05 - Login",
       "event": [
         {
           "listen": "test",
@@ -140,6 +169,7 @@
             "value": "application/json"
           }
         ],
+        "description": "Efetua login e salva o bearer token na collection.",
         "body": {
           "mode": "raw",
           "raw": "{\n  \"email\": \"{{email}}\",\n  \"senha\": \"{{senha}}\"\n}"
@@ -156,7 +186,7 @@
       }
     },
     {
-      "name": "05 - List Users (Bearer Token)",
+      "name": "06 - List Users",
       "request": {
         "method": "GET",
         "header": [
@@ -165,6 +195,7 @@
             "value": "Bearer {{access_token}}"
           }
         ],
+        "description": "Lista os usuarios usando autenticacao bearer.",
         "url": {
           "raw": "{{base_url}}/users",
           "host": [
@@ -177,35 +208,11 @@
       }
     },
     {
-      "name": "06 - Activate User",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"{{email}}\",\n  \"codigoAtivacao\": \"{{activation_code}}\"\n}"
-        },
-        "url": {
-          "raw": "{{base_url}}/ativarUsuario",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "ativarUsuario"
-          ]
-        }
-      }
-    },
-    {
       "name": "07 - Test Twilio WhatsApp",
       "request": {
         "method": "GET",
         "header": [],
+        "description": "Dispara o envio de uma mensagem de teste para o numero fixo configurado no controller.",
         "url": {
           "raw": "{{base_url}}/testarNumero",
           "host": [

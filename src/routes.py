@@ -1,4 +1,5 @@
 from src.Application.Controllers.user_controller import UserController
+
 from flask import jsonify, make_response
 
 def init_routes(app):    
@@ -25,3 +26,11 @@ def init_routes(app):
     @app.route('/users', methods=['GET'])
     def ver_usuarios():
         return UserController.verUsuarios()
+    
+    @app.route('/ativarUsuario', methods=["POST"])
+    def ativar_usuario():
+        return UserController.ativar_usuario()
+
+    @app.route('/login', methods=['POST'])
+    def login_user():
+        return UserController.login_user()

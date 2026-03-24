@@ -1,4 +1,7 @@
-from flask import request, jsonify, make_response
+from functools import wraps
+
+from flask import jsonify, make_response, request
+
 from src.Application.UseCases.user_use_case import UserUseCase
 from src.Infrastructure.Adapters.messaging.twilio_message_service import TwilioMessageService
 from src.Infrastructure.Adapters.repositories.sqlalchemy_user_repository import (
@@ -10,6 +13,26 @@ _user_use_case = UserUseCase(
     user_repository=SqlAlchemyUserRepository(),
     message_service=TwilioMessageService(),
 )
+
+
+def token_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        authorization = request.headers.get("Authorization", "")
+
+        if not authorization.startswith("Bearer "):
+            return make_response(jsonify({"erro": "Token ausente ou mal formatado."}), 401)
+
+        token = authorization.split(" ", 1)[1].strip()
+        payload = _user_use_case.validar_token(token)
+
+        if isinstance(payload, dict) and payload.get("erro"):
+            return make_response(jsonify(payload), 401)
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
 
 class UserController:
     @staticmethod
@@ -68,9 +91,46 @@ class UserController:
             return make_response(jsonify(result), 200)
         except Exception as exc:
             return make_response(jsonify({"erro": str(exc)}), 500)
-        
+
     @staticmethod
+    @token_required
     def verUsuarios():
         return make_response(jsonify({"usuarios": _user_use_case.list_users()}), 200)
 
+    @staticmethod
+    def ativar_usuario():
+        data = request.get_json() or {}
 
+        email = data.get("email")
+        codigoAtivacao = data.get("codigoAtivacao")
+
+        if not email or not codigoAtivacao:
+            return make_response(jsonify({"erro": "Um campo nao foi preenchido."}), 400)
+
+        usuario = _user_use_case.ativa_usuario_via_email(email, codigoAtivacao)
+
+        if usuario:
+            return "Usuario ativo com sucesso!", 200
+        return "Erro ao ativar usuario, verifique o email ou o codigo de ativacao.", 400
+
+    @staticmethod
+    def login_user():
+        data = request.get_json() or {}
+
+        email = data.get("email")
+        senha = data.get("senha")
+
+        if not email or not senha:
+            return make_response(jsonify({"erro": "Um campo nao foi preenchido."}), 400)
+
+        usuario = _user_use_case.validar_usuario(email, senha)
+
+        if not usuario:
+            return {"erro": "Login invalido"}, 400
+
+        token = _user_use_case.criar_token(user_id=usuario.id)
+
+        return {
+            "access_token": token,
+            "token_type": "bearer",
+        }, 200

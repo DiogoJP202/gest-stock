@@ -9,3 +9,7 @@ class UserRepositoryPort(ABC):
     @abstractmethod
     def list_all(self):
         raise NotImplementedError
+
+    @abstractmethod
+    def busca_por_email(self, email):
+        raise NotImplementedError

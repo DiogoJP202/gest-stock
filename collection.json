@@ -2,42 +2,95 @@
   "info": {
     "name": "Gest-Stock API",
     "_postman_id": "c3d2f3f0-gest-stock-api",
-    "description": "Collection for Gest-Stock API endpoints",
+    "description": "Fluxo completo para testar todos os endpoints com banco vazio.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "base_url",
       "value": "http://localhost:5000"
+    },
+    {
+      "key": "nome",
+      "value": "Mini Mercado X"
+    },
+    {
+      "key": "cnpj",
+      "value": "12345678000199"
+    },
+    {
+      "key": "email",
+      "value": "mercado@email.com"
+    },
+    {
+      "key": "celular",
+      "value": "5511999999999"
+    },
+    {
+      "key": "senha",
+      "value": "123456"
+    },
+    {
+      "key": "activation_code",
+      "value": ""
+    },
+    {
+      "key": "access_token",
+      "value": ""
     }
   ],
   "item": [
     {
-      "name": "Health Check",
+      "name": "01 - Health Check",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{base_url}}/",
-          "host": ["{{base_url}}"],
-          "path": [""]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            ""
+          ]
         }
       }
     },
     {
-      "name": "API Status",
+      "name": "02 - API Status",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{base_url}}/api",
-          "host": ["{{base_url}}"],
-          "path": ["api"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api"
+          ]
         }
       }
     },
     {
-      "name": "Create User",
+      "name": "03 - Create User",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const data = pm.response.json();",
+              "  const user = data['usuarios cadastrados'] || {};",
+              "  if (user.codigoTwilio) {",
+              "    pm.collectionVariables.set('activation_code', user.codigoTwilio);",
+              "  }",
+              "}"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [
@@ -48,24 +101,119 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"nome\": \"Mini Mercado X\",\n  \"cnpj\": \"12345678000199\",\n  \"email\": \"mercado@email.com\",\n  \"celular\": \"5511999999999\",\n  \"senha\": \"123456\"\n}"
+          "raw": "{\n  \"nome\": \"{{nome}}\",\n  \"cnpj\": \"{{cnpj}}\",\n  \"email\": \"{{email}}\",\n  \"celular\": \"{{celular}}\",\n  \"senha\": \"{{senha}}\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/user",
-          "host": ["{{base_url}}"],
-          "path": ["user"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "user"
+          ]
         }
       }
     },
     {
-      "name": "Test Twilio WhatsApp",
+      "name": "04 - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const data = pm.response.json();",
+              "  if (data.access_token) {",
+              "    pm.collectionVariables.set('access_token', data.access_token);",
+              "  }",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"senha\": \"{{senha}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "05 - List Users (Bearer Token)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/users",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      }
+    },
+    {
+      "name": "06 - Activate User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"codigoAtivacao\": \"{{activation_code}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/ativarUsuario",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "ativarUsuario"
+          ]
+        }
+      }
+    },
+    {
+      "name": "07 - Test Twilio WhatsApp",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{base_url}}/testarNumero",
-          "host": ["{{base_url}}"],
-          "path": ["testarNumero"]
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "testarNumero"
+          ]
         }
       }
     }

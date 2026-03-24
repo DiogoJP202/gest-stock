@@ -7,6 +7,7 @@ class User(db.Model):
     cnpj = db.Column(db.String(14), unique=True, nullable=False)
     celular = db.Column(db.String(13), nullable=False)
     senha = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.Boolean, default=False, nullable=False)
     codigoTwilio = db.Column(db.String(4), nullable=False)
 
     def to_dict(self):
@@ -16,6 +17,6 @@ class User(db.Model):
             "email": self.email,   
             "cnpj": self.cnpj,
             "celular": self.celular,
-            "status": False,
+            "status": self.status,
             "codigoTwilio": self.codigoTwilio
         }
